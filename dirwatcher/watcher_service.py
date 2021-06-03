@@ -48,7 +48,7 @@ class WatcherService:
         :return:
         None
         """
-        raise NotImplementedError
+        self.store.save_checkpoints(self._hash_dir())
 
     def get_changes_since_last_checkpoint(self) -> dict[Change, Iterator[Path]]:
         """

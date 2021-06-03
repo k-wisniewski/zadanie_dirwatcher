@@ -64,3 +64,21 @@ def test_has_anything_changed_should_raise_if_no_prior_checkpoint_found():
     )
     with pytest.raises(NoPriorCheckpointSavedError):
         service_under_test.has_anything_changed()
+
+
+def test_checkpoint_current_state_hashes_watched_files_and_saves_the_mapping():
+    store = _FakeCheckpointStoreAdapter({})
+    service_under_test = WatcherService(
+        lambda: [Path('file1.txt'), Path('file2.txt')], store, _FakeHasher())
+    service_under_test.checkpoint_current_state()
+    assert store.saved_checkpoints == {
+        Path("file1.txt"): "64496aedaadf981a8bd77f4ebb6e949eecaa15fb93cc3fa3fcb17acccd117e60",
+        Path("file2.txt"): "bf470f3fe05eef6ba064ed3f9859aeddfeece239f9234f35448c95e943015b52",
+    }
+
+
+def test_checkpoint_current_state_does_nothing_if_there_are_no_files_to_watch():
+    store = _FakeCheckpointStoreAdapter({})
+    service_under_test = WatcherService(lambda: [], store, _FakeHasher())
+    service_under_test.checkpoint_current_state()
+    assert store.saved_checkpoints == {}
