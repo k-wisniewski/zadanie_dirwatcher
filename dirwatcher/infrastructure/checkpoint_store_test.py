@@ -16,3 +16,22 @@ def test_load_checkpoints_should_raise_FileNotFoundError_when_store_file_not_fou
     with pytest.raises(FileNotFoundError):
         store.STORE_LOCATION = "some/non-existent-path.json"
         store.load_checkpoints()
+
+
+def test_save_checkpoints_should_save_path_to_hash_mapping_in_json_file(tmp_path):
+    store.STORE_LOCATION = tmp_path / "test_store.json"
+    hashes = {
+        Path("dirwatcher/checkpoint_store.py"): "b45be769a6206b136bb60d5437349e318a51ac6ed9ce690bb3184b9e8c01ac00"}
+    store.save_checkpoints(hashes)
+    expected = '{"dirwatcher/checkpoint_store.py": "b45be769a6206b136bb60d5437349e318a51ac6ed9ce690bb3184b9e8c01ac00"}'
+    with open(store.STORE_LOCATION) as f:
+        assert f.read() == expected
+
+
+def test_load_checkpoints_should_read_what_save_checkpoints_saved(tmp_path):
+    store.STORE_LOCATION = tmp_path / "test_store.json"
+    hashes = {
+        Path("dirwatcher/checkpoint_store.py"): "b45be769a6206b136bb60d5437349e318a51ac6ed9ce690bb3184b9e8c01ac00"}
+    store.save_checkpoints(hashes)
+    loaded = store.load_checkpoints()
+    assert loaded == hashes
