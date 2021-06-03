@@ -2,7 +2,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, Iterator
 
-from dirwatcher.infrastructure import checkpoint_store, hasher
+from dirwatcher.checkpoint_store_port import CheckpointStore
+from dirwatcher.hasher_port import Hasher
 
 
 class Change(Enum):
@@ -17,8 +18,10 @@ class NoPriorCheckpointSavedError(Exception):
 
 class WatcherService:
 
-    def __init__(self, dir_lister: Callable[[], list[Path]]):
+    def __init__(self, dir_lister: Callable[[], list[Path]], store: CheckpointStore, hasher: Hasher):
         self.dir_lister = dir_lister
+        self.store = store
+        self.hasher = hasher
 
     def has_anything_changed(self) -> bool:
         """
@@ -31,7 +34,7 @@ class WatcherService:
         False - if there isn't
         """
         try:
-            checkpoints = checkpoint_store.load_checkpoints()
+            checkpoints = self.store.load_checkpoints()
         except FileNotFoundError as e:
             raise NoPriorCheckpointSavedError(e) from e
         else:
@@ -66,4 +69,4 @@ class WatcherService:
         raise NotImplementedError
 
     def _hash_dir(self) -> dict[Path, str]:
-        return {item: hasher.hash_content(item) for item in self.dir_lister()}
+        return {item: self.hasher.hash_content(item) for item in self.dir_lister()}
