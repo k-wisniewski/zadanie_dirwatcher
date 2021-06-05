@@ -18,7 +18,7 @@ class NoPriorCheckpointSavedError(Exception):
 
 class WatcherService:
 
-    def __init__(self, traverser: Callable[[], list[Path]], store: CheckpointStore, hasher: Hasher):
+    def __init__(self, traverser: Callable[[], Iterator[Path]], store: CheckpointStore, hasher: Hasher):
         self._traverser = traverser
         self._store = store
         self._hasher = hasher
