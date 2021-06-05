@@ -1,0 +1,12 @@
+[build-system]
+    build-backend = "setuptools.build_meta"
+    requires = [
+        "setuptools >= 57.0",
+        "wheel"
+    ]
+
+[tool.pytest.ini_options]
+    minversion = "6.0"
+    testpaths = [
+        "dirwatcher",
+    ]
