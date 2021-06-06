@@ -54,9 +54,6 @@ def watch(ctx: click.Context):
 @click.pass_context
 def get(ctx, new, deleted, content_changed):
     store, path = ctx.obj["store"], ctx.obj["path"]
-    if store.exists():
-        exit(click.echo("Checkpoints store already exists - choose another location."))
-
     watcher_service = WatcherService(
         make_traverser(path),
         CheckpointStoreAdapter(store_path=store),

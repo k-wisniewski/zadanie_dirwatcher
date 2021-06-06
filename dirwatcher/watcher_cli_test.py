@@ -27,7 +27,7 @@ def tmpdir_with_file(tmpdir):
     with open(test_path, "w") as f:
         f.write("Hello darkness my old friend")
     yield tmpdir, test_path, store_path
-    test_path.remove()
+    Path(test_path).unlink(missing_ok=True)
 
 
 def store_contains_expected_content(store_path, test_path):
@@ -88,3 +88,48 @@ def test_cli_should_not_allow_unreadable_files_as_store_paths(tmpdir_with_file):
     with runner.isolated_filesystem(temp_dir=tmpdir), no_permissions(store_path) as store:
         result = runner.invoke(cli, ["--store", store, str(tmpdir), "watch"])
         assert result.exit_code > 0
+
+
+def test_get_should_return_new_files_if_new_option_passed_and_prior_checkpoint_available(tmpdir_with_file):
+    tmpdir, test_path, *_ = tmpdir_with_file
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmpdir):
+        result = runner.invoke(cli, [str(tmpdir), "watch"])
+        assert result.exit_code == 0
+        new_file_path = tmpdir / "new_file.txt"
+        with open(new_file_path, "w") as f:
+            f.write("I'm new here")
+
+        result = runner.invoke(cli, [str(tmpdir), "get", "--new"])
+        assert result.exit_code == 0
+        print(result.stdout)
+        assert result.stdout == f"New files: [PosixPath('{new_file_path}')]\n"
+
+
+def test_get_should_return_deleted_files_if_deleted_option_passed_and_prior_checkpoint_available(tmpdir_with_file):
+    tmpdir, test_path, *_ = tmpdir_with_file
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmpdir):
+        result = runner.invoke(cli, [str(tmpdir), "watch"])
+        assert result.exit_code == 0
+        Path(test_path).unlink()
+
+        result = runner.invoke(cli, [str(tmpdir), "get", "--deleted"])
+        assert result.exit_code == 0
+        print(result.stdout)
+        assert result.stdout == f"Deleted files: [PosixPath('{test_path}')]\n"
+
+
+def test_get_should_return_changed_files_if_changed_option_passed_and_prior_checkpoint_available(tmpdir_with_file):
+    tmpdir, test_path, *_ = tmpdir_with_file
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmpdir):
+        result = runner.invoke(cli, [str(tmpdir), "watch"])
+        assert result.exit_code == 0
+        with open(test_path, "w") as f:
+            f.write("I'm new here")
+
+        result = runner.invoke(cli, [str(tmpdir), "get", "--content-changed"])
+        assert result.exit_code == 0
+        print(result.stdout)
+        assert result.stdout == f"Content changed: [PosixPath('{test_path}')]\n"
