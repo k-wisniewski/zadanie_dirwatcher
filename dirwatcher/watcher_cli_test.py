@@ -76,9 +76,8 @@ def test_cli_should_not_allow_files_as_arguments(tmpdir_with_file):
 def test_cli_should_not_allow_unreadable_dirs_as_arguments(tmpdir_with_file):
     tmpdir, test_path, *_ = tmpdir_with_file
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmpdir):
-        with no_permissions(tmpdir) as directory:
-            result = runner.invoke(cli, [directory, "watch"])
+    with runner.isolated_filesystem(temp_dir=tmpdir), no_permissions(tmpdir) as directory:
+        result = runner.invoke(cli, [directory, "watch"])
         assert result.exit_code > 0
 
 
@@ -86,7 +85,6 @@ def test_cli_should_not_allow_unreadable_files_as_store_paths(tmpdir_with_file):
     tmpdir, test_path, store_path, *_ = tmpdir_with_file
     Path(store_path).touch()
     runner = CliRunner()
-    with runner.isolated_filesystem(temp_dir=tmpdir):
-        with no_permissions(store_path) as store:
-            result = runner.invoke(cli, ["--store", store, str(tmpdir), "watch"])
+    with runner.isolated_filesystem(temp_dir=tmpdir), no_permissions(store_path) as store:
+        result = runner.invoke(cli, ["--store", store, str(tmpdir), "watch"])
         assert result.exit_code > 0
