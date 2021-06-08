@@ -16,6 +16,10 @@ class NoPriorCheckpointSavedError(Exception):
     pass
 
 
+class InvalidDirectoryRequested(Exception):
+    pass
+
+
 class WatcherService:
 
     def __init__(self, traverser: Callable[[], Iterator[Path]], store: CheckpointStore, hasher: Hasher):
@@ -37,9 +41,11 @@ class WatcherService:
             checkpoints = self._store.load_checkpoints()
         except FileNotFoundError as e:
             raise NoPriorCheckpointSavedError(e) from e
-        else:
+        try:
             current_checkpoints = self._hash_dir()
-            return checkpoints != current_checkpoints
+        except FileNotFoundError as e:
+            raise InvalidDirectoryRequested(e)
+        return checkpoints != current_checkpoints
 
     def checkpoint_current_state(self):
         """
@@ -48,7 +54,10 @@ class WatcherService:
         :return:
         None
         """
-        self._store.save_checkpoints(self._hash_dir())
+        try:
+            self._store.save_checkpoints(self._hash_dir())
+        except FileNotFoundError as e:
+            raise InvalidDirectoryRequested(e)
 
     def get_changes_since_last_checkpoint(self) -> dict[Change, Iterator[Path]]:
         """
